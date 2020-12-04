@@ -1,44 +1,92 @@
-const HtmlWebpackPlugin = require('html-webpack-plugin');
-const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const path = require('path');
-
-const devMode = process.env.NODE_ENV === 'development';
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = {
-  mode: process.env.NODE_ENV || 'development',
-  entry: './src/index.js',
+  entry: {
+    app: './src/index.js',
+  },
   output: {
-    filename: 'bundle.js',
-    path: path.resolve(__dirname, 'dist'),
+    filename: '[name].js',
+    path: path.resolve(__dirname, './dist'),
+    publicPath: './',
+  },
+  devServer: {
+    overlay: {
+      warnings: true,
+      errors: true,
+    },
+    hot: true,
+    contentBase: path.join(__dirname, 'dist'),
+    port: 8080,
+  },
+  optimization: {
+    splitChunks: {
+      cacheGroups: {
+        vendor: {
+          name: 'vendors',
+          test: /node_modules/,
+          chunks: 'all',
+          enforce: true,
+        },
+      },
+    },
   },
   module: {
     rules: [
       {
+        enforce: 'pre',
         test: /\.js$/,
         exclude: /node_modules/,
-        use: {
-          loader: 'babel-loader',
-        },
+        use: ['babel-loader', 'eslint-loader'],
       },
       {
-        test: /\.s?[ac]ss$/,
+        test: /\.js$/,
+        exclude: /node_modules/,
+        loader: 'babel-loader',
+      },
+      {
+        test: /\.css$/,
         use: [
-          devMode ? 'style-loader' : MiniCssExtractPlugin.loader,
-          'css-loader',
-          'postcss-loader',
-          'sass-loader',
+          'style-loader',
+          MiniCssExtractPlugin.loader,
+          {
+            loader: 'css-loader',
+            options: { sourceMap: true },
+          }, {
+            loader: 'postcss-loader',
+            options: { sourceMap: true, config: { path: 'src/js/postcss.config.js' } },
+          },
+        ],
+      },
+      {
+        test: /\.scss$/,
+        use: [
+          'style-loader',
+          MiniCssExtractPlugin.loader,
+          {
+            loader: 'css-loader',
+            options: { sourceMap: true },
+          }, {
+            loader: 'postcss-loader',
+            options: { sourceMap: true, config: { path: 'src/js/postcss.config.js' } },
+          }, {
+            loader: 'sass-loader',
+            options: { sourceMap: true },
+          },
         ],
       },
     ],
   },
   plugins: [
     new MiniCssExtractPlugin({
-      filename: devMode ? '[name].css' : '[name].[hash].css',
-      chunkFilename: devMode ? '[id].css' : '[id].[hash].css',
+      filename: 'css/[name].[hash].css',
     }),
     new HtmlWebpackPlugin({
-      title: 'RSS Reader',
-      template: 'template.html',
+      hash: false,
+      template: 'src/index.html',
+      filename: 'index.html',
+      inject: true,
     }),
   ],
 };

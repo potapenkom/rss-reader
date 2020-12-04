@@ -1,1 +1,5 @@
-export default (a, b) => a + b;
+import './scss/main.scss';
+import 'bootstrap';
+import start from './js/start';
+
+start();
